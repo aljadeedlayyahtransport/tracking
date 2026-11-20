@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Al-Jadeed Layyah Transport – Track your parcel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e9f0f7; --surface:#ffffff; --ink:#13213c; --muted:#5b6b85; --line:#cfdae8;
+  --accent:#2447f5; --accent-ink:#ffffff; --signal:#ffc83d; --ok:#17835a; --err:#c0392b;
+  --display:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;
+  --body:"Instrument Sans","Helvetica Neue",Arial,sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0f1830;--surface:#172342;--ink:#eaf0fb;--muted:#9bacc9;--line:#2b3a5e;--accent:#6f8bff;--accent-ink:#0f1830;--ok:#4cc794;--err:#ff8a7a}
+}
+:root[data-theme="dark"]{--bg:#0f1830;--surface:#172342;--ink:#eaf0fb;--muted:#9bacc9;--line:#2b3a5e;--accent:#6f8bff;--accent-ink:#0f1830;--ok:#4cc794;--err:#ff8a7a}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:880px;margin:0 auto;padding:28px 20px 56px}
+.brand{display:flex;align-items:center;gap:10px;font:800 20px var(--display);letter-spacing:-.02em}
+.brand i{width:30px;height:30px;border-radius:9px;background:var(--accent);display:grid;place-items:center}
+.brand i::after{content:"";width:12px;height:12px;border-radius:3px;background:var(--signal);transform:rotate(45deg)}
+h1{font:800 clamp(40px,9vw,76px)/.98 var(--display);letter-spacing:-.04em;margin:44px 0 14px;max-width:11ch}
+.lede{color:var(--muted);max-width:44ch;margin:0 0 28px}
+form{display:flex;gap:8px;background:var(--surface);border:2px solid var(--ink);border-radius:16px;padding:6px;box-shadow:6px 6px 0 var(--signal)}
+input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:600 18px var(--display);letter-spacing:.04em;padding:12px 14px;outline:0}
+input::placeholder{color:var(--muted);font-weight:500;letter-spacing:0}
+button{font:600 16px var(--body);cursor:pointer;border:0;border-radius:11px}
+.go{background:var(--accent);color:var(--accent-ink);padding:0 24px}
+.go:hover{filter:brightness(1.1)}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+form:focus-within{outline:3px solid var(--accent);outline-offset:3px}
+#msg{margin:16px 0 0;color:var(--err);font-weight:500;min-height:1.5em}
+#result{margin-top:30px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:26px}
+.reveal{animation:rise .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;align-items:flex-start}
+.status{font:800 clamp(28px,6vw,40px)/1.05 var(--display);letter-spacing:-.03em;margin:0}
+.pill{display:inline-flex;align-items:center;gap:8px;background:var(--signal);color:#13213c;font-weight:600;font-size:14px;padding:5px 12px;border-radius:99px;margin-bottom:10px}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:#13213c;animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.eta{text-align:right}
+.eta b{display:block;font:700 22px var(--display);letter-spacing:-.02em}
+.eta span,.meta dt{color:var(--muted);font-size:14px}
+.route{position:relative;margin:38px 6px 14px;display:flex;justify-content:space-between}
+.route::before,.route .fill{content:"";position:absolute;top:9px;left:0;height:4px;border-radius:4px;background:var(--line)}
+.route::before{right:0}
+.route .fill{background:var(--accent);width:var(--p);z-index:1;transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+.stop{position:relative;z-index:2;width:0;display:flex;flex-direction:column;align-items:center}
+.stop::before{content:"";width:22px;height:22px;border-radius:50%;background:var(--surface);border:4px solid var(--line)}
+.stop.done::before{background:var(--accent);border-color:var(--accent)}
+.stop.now::before{border-color:var(--signal);background:var(--ink);box-shadow:0 0 0 6px color-mix(in srgb,var(--signal) 45%,transparent)}
+.stop span{position:absolute;top:30px;white-space:nowrap;font-size:13px;font-weight:600;text-align:center}
+.stop small{display:block;color:var(--muted);font-weight:400}
+.stop:first-child span{transform:translateX(30%)}.stop:last-child span{transform:translateX(-30%)}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:18px;margin:62px 0 0;padding-top:22px;border-top:1px solid var(--line)}
+.meta dd{margin:2px 0 0;font-weight:600}.meta dl{margin:0}
+h2{font:700 22px var(--display);letter-spacing:-.02em;margin:34px 0 14px}
+ol{list-style:none;margin:0;padding:0 0 0 22px;position:relative}
+ol::before{content:"";position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:var(--line)}
+li{position:relative;padding:0 0 22px 18px}
+li:last-child{padding-bottom:0}
+li::before{content:"";position:absolute;left:-22px;top:6px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:3px solid var(--muted)}
+li:first-child::before{background:var(--signal);border-color:var(--ink)}
+li b{display:block;font-weight:600}
+li p{margin:0;color:var(--muted);font-size:15px}
+li time{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.foot{margin-top:40px;color:var(--muted);font-size:14px}
+@media (max-width:520px){
+  form{flex-direction:column;box-shadow:4px 4px 0 var(--signal)}
+  .go{padding:14px}
+  .eta{text-align:left}
+  .card{padding:20px}
+}
+
+a.brand{color:inherit;text-decoration:none}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px 16px;flex-wrap:wrap}
+.top nav{display:flex;gap:4px;margin-left:-12px}
+.top nav a{color:var(--ink);text-decoration:none;font-weight:600;font-size:15px;padding:8px 12px;border-radius:10px}
+.top nav a:hover{background:var(--surface)}
+.top nav a[aria-current="page"]{background:var(--ink);color:var(--bg)}
+.view[hidden]{display:none}
+h1.wide{max-width:16ch;font-size:clamp(36px,7.5vw,60px)}
+.prose p{max-width:58ch;margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:6px}
+.grid .card{padding:20px}
+.grid h3{font:700 18px var(--display);letter-spacing:-.01em;margin:0 0 6px}
+.grid p{margin:0;color:var(--muted);font-size:15px}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;list-style:none}
+.facts li{padding:10px 16px;background:var(--surface);border:1px solid var(--line);border-radius:99px;font-size:15px}
+.facts li::before{display:none}.facts li b{display:inline;margin-right:6px}
+.split{display:grid;grid-template-columns:1fr 1.2fr;gap:18px;align-items:start}
+.info dl{margin:0 0 18px}.info dt{color:var(--muted);font-size:14px}
+.info dd{margin:2px 0 0;font-weight:600}
+.info a{color:var(--accent)}
+.fld{display:block;margin-bottom:14px;font-weight:600;font-size:15px}
+.fld input,.fld textarea{display:block;width:100%;margin-top:6px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--ink);font:400 16px var(--body);letter-spacing:0}
+.fld textarea{min-height:130px;resize:vertical}
+.send{background:var(--accent);color:var(--accent-ink);padding:13px 24px}
+#sent{margin:14px 0 0;color:var(--muted);font-size:15px}
+@media (max-width:640px){.split{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <a class="brand" href="#"><i aria-hidden="true"></i>Al-Jadeed Layyah Transport</a>
+    <nav aria-label="Main">
+      <a href="#" data-v="track">Track</a>
+      <a href="#about" data-v="about">About us</a>
+      <a href="#contact" data-v="contact">Contact us</a>
+    </nav>
+  </header>
+
+  <div class="view" id="v-track">
+    <h1>Where’s my parcel?</h1>
+    <p class="lede">Enter your tracking number to see where your delivery is and when it will arrive.</p>
+    <form id="f" autocomplete="off">
+      <label for="id" style="position:absolute;left:-9999px">Tracking number</label>
+      <input id="id" name="id" placeholder="Tracking number" inputmode="text" autocapitalize="characters" spellcheck="false" maxlength="24">
+      <button class="go" type="submit">Track parcel</button>
+    </form>
+    <p id="msg" role="alert"></p>
+    <section id="result" aria-live="polite"></section>
+  </div>
+
+  <div class="view prose" id="v-about" hidden></div>
+
+  <div class="view" id="v-contact" hidden></div>
+</main>
+
+<script>
+/* ============================================================
+   EDIT HERE. To update the parcel, change STATUS below to one of
+   the stage names listed in STAGES (spelled exactly the same).
+   ============================================================ */
+const TRACKING_ID = "LY15832961";
+const STATUS = "Label Created";
+
+const SHIPMENT = {
+  recipient: "Forrest Collard",
+  origin: "Layyah, Pakistan",
+  destination: "Leitchfield, Kentucky 42754, USA"
+};
+
+/* One entry per stage, in order. Fill in `date` when a stage is reached.
+   `at` = which point on the route bar (0 to 3) the parcel is at. */
+const STAGES = [
+  { name: "Label Created",    at: 0, eta: "To be confirmed", note: "Awaiting pickup",
+    title: "Shipping label created", detail: "Booked for dispatch in Layyah. Waiting for pickup.", date: "Nov 21, 2026" },
+  { name: "Picked Up",        at: 0, eta: "To be confirmed", note: "Picked up",
+    title: "Picked up in Layyah", detail: "Parcel collected by Al-Jadeed Layyah Transport.", date: "" },
+  { name: "In Transit",       at: 1, eta: "To be confirmed", note: "On its way",
+    title: "In transit", detail: "Your parcel is travelling to the United States.", date: "" },
+  { name: "Arrived in USA",   at: 2, eta: "To be confirmed", note: "Arrived in the USA",
+    title: "Arrived in the United States", detail: "Your parcel is moving through the local network.", date: "" },
+  { name: "Out for Delivery", at: 2, eta: "Today", note: "Out for delivery",
+    title: "Out for delivery", detail: "Your parcel is on its way to Leitchfield, KY.", date: "" },
+  { name: "Delivered",        at: 3, eta: "Delivered", note: "Delivered",
+    title: "Delivered", detail: "Your parcel was delivered in Leitchfield, KY.", date: "" }
+];
+
+const STOPS = [["Layyah","Origin"],["In transit","International"],["United States","Local network"],["Leitchfield, KY","Delivery"]];
+/* ============================================================ */
+
+
+/* ============================================================
+   CONTACT PAGE: edit these values. They appear on the Contact us page.
+   ============================================================ */
+const CONTACT = {
+  intro: "Questions about a parcel, a booking or a delivery? Reach us any of these ways.",
+  email: "aljadeedlayyahtransport@protonmail.com",
+  address: "Main Bazaar, Layyah, Punjab, Pakistan",
+  hours: "Monday to Saturday, 9:00 am to 6:00 pm"
+};
+
+/* ============================================================
+   ABOUT PAGE: edit any of this text.
+   ============================================================ */
+const ABOUT = {
+  headline: "Moving things around Layyah, and a fair bit further.",
+  paragraphs: [
+    "Al-Jadeed Layyah Transport started with one cart, one ledger and a stubborn belief that a parcel should arrive when it’s promised. We still work that way, just with better tracking.",
+    "From dates and mangoes to documents and wedding gifts, our drivers have carried it all. If it fits in a van, we’ll get it where it’s going, and if it doesn’t fit, we’ll find a bigger van.",
+    "We book your parcel in Layyah, keep an eye on it the whole way, and hand it over to a real person at the other end."
+  ],
+  services: [
+    ["Local delivery", "Same-day runs around Layyah and nearby towns."],
+    ["Intercity parcels", "Regular routes to major cities across Punjab and beyond."],
+    ["International shipping", "Booked in Layyah, tracked all the way to the destination."],
+    ["Bulk and business", "Steady pickups for shops, offices and families."]
+  ],
+  facts: [
+    ["Parcels moved", "Quite a lot"],
+    ["Cups of chai per day", "Too many to count"],
+    ["Wrong turns", "Almost none"],
+    ["Horn honked", "Only when needed"]
+  ]
+};
+
+const $ = s => document.querySelector(s);
+const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function render(){
+  let idx = STAGES.findIndex(s => s.name.toLowerCase() === STATUS.trim().toLowerCase());
+  if (idx < 0) idx = 0;
+  const cur = STAGES[idx];
+  const stops = STOPS.map((s,i)=>`<div class="stop ${i<cur.at?'done':''} ${i===cur.at?'now':''}"><span>${esc(s[0])}<small>${esc(s[1])}</small></span></div>`).join("");
+  const meta = [["Recipient",SHIPMENT.recipient],["Shipped from",SHIPMENT.origin],["Delivering to",SHIPMENT.destination]]
+    .map(m=>`<dl><dt>${esc(m[0])}</dt><dd>${esc(m[1])}</dd></dl>`).join("");
+  const ev = STAGES.slice(0, idx+1).reverse()
+    .map(e=>`<li>${e.date?`<time>${esc(e.date)}</time>`:""}<b>${esc(e.title)}</b><p>${esc(e.detail)}</p></li>`).join("");
+  $("#result").innerHTML = `<div class="card reveal">
+    <div class="head">
+      <div><span class="pill">${esc(cur.note)}</span><h2 class="status" style="margin:0">${esc(cur.name)}</h2>
+      <p style="margin:6px 0 0;color:var(--muted)">Tracking number ${esc(TRACKING_ID)}</p></div>
+      <div class="eta"><span>Estimated arrival</span><b>${esc(cur.eta)}</b></div>
+    </div>
+    <div class="route" style="--p:0%"><div class="fill"></div>${stops}</div>
+    <div class="meta">${meta}</div>
+    <h2>Delivery history</h2><ol>${ev}</ol></div>`;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ $(".route").style.setProperty("--p", (cur.at/(STOPS.length-1)*100)+"%"); }));
+}
+
+function track(raw){
+  const id = raw.replace(/\s+/g,"").toUpperCase();
+  $("#msg").textContent = ""; $("#result").innerHTML = "";
+  if(!id){ $("#msg").textContent = "Enter a tracking number to continue."; return; }
+  if(id !== TRACKING_ID){ $("#msg").textContent = `We couldn’t find “${id}”. Check the number for typos and try again.`; return; }
+  render();
+  $("#result").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion:reduce)").matches ? "auto" : "smooth", block:"start"});
+}
+$("#f").addEventListener("submit", e => { e.preventDefault(); track($("#id").value); });
+
+function renderAbout(){
+  $("#v-about").innerHTML = `<h1 class="wide">${esc(ABOUT.headline)}</h1>
+    ${ABOUT.paragraphs.map(p=>`<p>${esc(p)}</p>`).join("")}
+    <h2>What we do</h2>
+    <div class="grid">${ABOUT.services.map(x=>`<div class="card"><h3>${esc(x[0])}</h3><p>${esc(x[1])}</p></div>`).join("")}</div>
+    <h2>A few facts</h2>
+    <ul class="facts">${ABOUT.facts.map(f=>`<li><b>${esc(f[0])}:</b>${esc(f[1])}</li>`).join("")}</ul>`;
+}
+
+function renderContact(){
+  $("#v-contact").innerHTML = `<h1 class="wide">Contact us</h1>
+    <p class="lede">${esc(CONTACT.intro)}</p>
+    <div class="split">
+      <div class="card info">
+        <dl><dt>Phone</dt><dd><a href="tel:${esc(CONTACT.phone.replace(/\s+/g,""))}">${esc(CONTACT.phone)}</a></dd></dl>
+        <dl><dt>Email</dt><dd><a href="mailto:${esc(CONTACT.email)}">${esc(CONTACT.email)}</a></dd></dl>
+        <dl><dt>Office</dt><dd>${esc(CONTACT.address)}</dd></dl>
+        <dl style="margin:0"><dt>Opening hours</dt><dd>${esc(CONTACT.hours)}</dd></dl>
+      </div>
+      <form class="card" id="cf" style="display:block;box-shadow:none;border:1px solid var(--line);padding:26px">
+        <label class="fld">Your name<input name="n" required autocomplete="name"></label>
+        <label class="fld">Your email<input name="e" type="email" required autocomplete="email"></label>
+        <label class="fld">Tracking number (optional)<input name="t" autocapitalize="characters" spellcheck="false"></label>
+        <label class="fld">Message<textarea name="m" required></textarea></label>
+        <button class="send" type="submit">Send message</button>
+        <p id="sent" role="status"></p>
+      </form>
+    </div>`;
+  $("#cf").addEventListener("submit", e => {
+    e.preventDefault();
+    const d = new FormData(e.target);
+    const body = `${d.get("m")}\n\nName: ${d.get("n")}\nEmail: ${d.get("e")}` + (d.get("t") ? `\nTracking number: ${d.get("t")}` : "");
+    const a = document.createElement("a");
+    a.href = `mailto:${CONTACT.email}?subject=${encodeURIComponent("Message from " + d.get("n"))}&body=${encodeURIComponent(body)}`;
+    a.click();
+    $("#sent").textContent = `Your email app should open with the message ready to send. If it doesn’t, write to us at ${CONTACT.email}.`;
+  });
+}
+
+function route(){
+  const v = ({about:"about", contact:"contact"})[location.hash.slice(1)] || "track";
+  ["track","about","contact"].forEach(k => { $("#v-"+k).hidden = k !== v; });
+  document.querySelectorAll(".top nav a").forEach(a => {
+    if (a.dataset.v === v) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
+  });
+  window.scrollTo(0,0);
+}
+renderAbout(); renderContact(); route();
+addEventListener("hashchange", route);
+</script>
+</body>
+</html>
